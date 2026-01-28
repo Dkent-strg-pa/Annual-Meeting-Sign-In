@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Sign-In</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .view-toggle {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .view-toggle button {
+            background: #f0f0f0;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 5px;
+            transition: all 0.3s;
+        }
+
+        .view-toggle button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .view-toggle button:hover {
+            opacity: 0.8;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        button.submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button.submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button.submit-btn:active {
+            transform: translateY(0);
+        }
+
+        button.submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        /* Attendance List Styles */
+        .attendance-view {
+            display: none;
+        }
+
+        .attendance-view.active {
+            display: block;
+        }
+
+        .stats {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stats h2 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .stats p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .attendance-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .attendance-item {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .attendance-item:last-child {
+            border-bottom: none;
+        }
+
+        .attendance-item:hover {
+            background: #f8f9fa;
+        }
+
+        .attendance-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .attendance-time {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .refresh-btn:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Event Sign-In</h1>
+        
+        <div class="view-toggle">
+            <button id="formViewBtn" class="active" onclick="showView('form')">Sign In</button>
+            <button id="attendanceViewBtn" onclick="showView('attendance')">View Attendance</button>
+        </div>
+
+        <!-- Form View -->
+        <div id="formView" class="form-view">
+            <p class="subtitle">Please fill out the form below to check in</p>
+
+            <div id="successMessage" class="success-message">
+                ✓ Thank you! Your sign-in was successful.
+            </div>
+
+            <div id="errorMessage" class="error-message">
+                There was an error submitting your form. Please try again.
+            </div>
+
+            <form id="signInForm">
+                <div class="form-group">
+                    <label for="firstName">First Name <span class="required">*</span></label>
+                    <input type="text" id="firstName" name="firstName" required autocomplete="given-name">
+                </div>
+
+                <div class="form-group">
+                    <label for="lastName">Last Name <span class="required">*</span></label>
+                    <input type="text" id="lastName" name="lastName" required autocomplete="family-name">
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">Sign In</button>
+                <div class="loading" id="loading">Submitting...</div>
+            </form>
+        </div>
+
+        <!-- Attendance View -->
+        <div id="attendanceView" class="attendance-view">
+            <div class="stats">
+                <h2 id="totalCount">0</h2>
+                <p>Total Sign-Ins</p>
+            </div>
+
+            <button class="refresh-btn" onclick="loadAttendance()">Refresh List</button>
+
+            <div class="attendance-list" id="attendanceList">
+                <div class="empty-state">Loading attendance...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // IMPORTANT: Replace this with your JSONBin.io Bin ID after setup
+        // Get your Bin ID from: https://jsonbin.io (free account)
+        const JSONBIN_BIN_ID = 'YOUR_BIN_ID_HERE';
+        const JSONBIN_API_KEY = '$2b$10$YOUR_API_KEY_HERE'; // Optional, for private bins
+
+        // If you don't want to use JSONBin.io, you can use this alternative:
+        // Store data in a GitHub Gist or use localStorage (but localStorage only works on same device)
+        
+        const form = document.getElementById('signInForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function showView(view) {
+            const formView = document.getElementById('formView');
+            const attendanceView = document.getElementById('attendanceView');
+            const formBtn = document.getElementById('formViewBtn');
+            const attendanceBtn = document.getElementById('attendanceViewBtn');
+
+            if (view === 'form') {
+                formView.style.display = 'block';
+                attendanceView.classList.remove('active');
+                formBtn.classList.add('active');
+                attendanceBtn.classList.remove('active');
+            } else {
+                formView.style.display = 'none';
+                attendanceView.classList.add('active');
+                formBtn.classList.remove('active');
+                attendanceBtn.classList.add('active');
+                loadAttendance();
+            }
+        }
+
+        async function loadAttendance() {
+            const attendanceList = document.getElementById('attendanceList');
+            const totalCount = document.getElementById('totalCount');
+            
+            attendanceList.innerHTML = '<div class="empty-state">Loading attendance...</div>';
+
+            try {
+                // Try to load from JSONBin.io
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                    headers: {
+                        'X-Master-Key': JSONBIN_API_KEY || undefined
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const submissions = data.record?.submissions || [];
+                    displayAttendance(submissions);
+                } else {
+                    // Fallback to localStorage if JSONBin fails
+                    loadFromLocalStorage();
+                }
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+                loadFromLocalStorage();
+            }
+        }
+
+        function loadFromLocalStorage() {
+            const stored = localStorage.getItem('eventAttendance');
+            const submissions = stored ? JSON.parse(stored) : [];
+            displayAttendance(submissions);
+        }
+
+        function displayAttendance(submissions) {
+            const attendanceList = document.getElementById('attendanceList');
+            const totalCount = document.getElementById('totalCount');
+
+            totalCount.textContent = submissions.length;
+
+            if (submissions.length === 0) {
+                attendanceList.innerHTML = '<div class="empty-state">No sign-ins yet</div>';
+                return;
+            }
+
+            // Sort by timestamp (newest first)
+            submissions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            attendanceList.innerHTML = submissions.map((submission, index) => `
+                <div class="attendance-item">
+                    <div>
+                        <div class="attendance-name">${submission.fullName}</div>
+                        <div class="attendance-time">${submission.timestamp}</div>
+                    </div>
+                    <div style="color: #999; font-size: 12px;">#${submissions.length - index}</div>
+                </div>
+            `).join('');
+        }
+
+        async function saveSubmission(submission) {
+            try {
+                // Try to save to JSONBin.io
+                const existingData = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                    headers: {
+                        'X-Master-Key': JSONBIN_API_KEY || undefined
+                    }
+                }).then(r => r.ok ? r.json() : null);
+
+                const submissions = existingData?.record?.submissions || [];
+                submissions.push(submission);
+
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_API_KEY || undefined
+                    },
+                    body: JSON.stringify({ submissions })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save to JSONBin');
+                }
+            } catch (error) {
+                console.error('Error saving to JSONBin, using localStorage:', error);
+                // Fallback to localStorage
+                const stored = localStorage.getItem('eventAttendance');
+                const submissions = stored ? JSON.parse(stored) : [];
+                submissions.push(submission);
+                localStorage.setItem('eventAttendance', JSON.stringify(submissions));
+            }
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Hide previous messages
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            
+            // Get form data
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const fullName = `${firstName} ${lastName}`;
+            const timestamp = new Date().toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true 
+            });
+
+            const submission = {
+                firstName,
+                lastName,
+                fullName,
+                timestamp,
+                date: new Date().toISOString()
+            };
+            
+            try {
+                await saveSubmission(submission);
+                successMessage.style.display = 'block';
+                form.reset();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                // Refresh attendance if viewing that tab
+                if (document.getElementById('attendanceView').classList.contains('active')) {
+                    loadAttendance();
+                }
+            } catch (error) {
+                errorMessage.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+
+        // Load attendance on page load if viewing that tab
+        if (window.location.hash === '#attendance') {
+            showView('attendance');
+        }
+    </script>
+</body>
+</html>
