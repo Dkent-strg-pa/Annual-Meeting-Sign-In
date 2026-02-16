@@ -26,64 +26,19 @@ jobs:
             echo "ERROR: MY_GITHUB_TOKEN secret is not set!"
             exit 1
           fi
-          echo "Secret is set (length: ${#MY_GITHUB_TOKEN})"
-          # Use Python for more reliable string replacement
-          python3 << 'PYTHON_SCRIPT'
-          import os
-          import sys
-          
-          token = os.environ.get('MY_GITHUB_TOKEN', '')
-          if not token:
-              print("ERROR: MY_GITHUB_TOKEN environment variable is empty!")
-              sys.exit(1)
-          
-          print(f"Token length: {len(token)}")
-          print(f"Token starts with: {token[:10]}...")
-          
-          try:
-              with open('index.html', 'r', encoding='utf-8') as f:
-                  content = f.read()
-              
-              if 'GITHUB_TOKEN_PLACEHOLDER' not in content:
-                  print("WARNING: GITHUB_TOKEN_PLACEHOLDER not found in index.html")
-                  print("Searching for variations...")
-                  if 'GITHUB_TOKEN' in content:
-                      print("Found GITHUB_TOKEN in file, but not the placeholder")
-              else:
-                  print("Found GITHUB_TOKEN_PLACEHOLDER, replacing...")
-                  content = content.replace('GITHUB_TOKEN_PLACEHOLDER', token)
-                  
-                  with open('index.html', 'w', encoding='utf-8') as f:
-                      f.write(content)
-                  
-                  # Verify replacement worked
-                  if 'GITHUB_TOKEN_PLACEHOLDER' in content:
-                      print("ERROR: Token replacement failed - placeholder still found!")
-                      sys.exit(1)
-                  
-                  # Verify token is in the file
-                  if token not in content:
-                      print("ERROR: Token not found in file after replacement!")
-                      sys.exit(1)
-                  
-                  print("Token successfully injected and verified")
-                  
-                  # Double-check by reading the file back
-                  with open('index.html', 'r', encoding='utf-8') as f:
-                      verify_content = f.read()
-                  if 'GITHUB_TOKEN_PLACEHOLDER' in verify_content:
-                      print("ERROR: Verification failed - placeholder still in file!")
-                      sys.exit(1)
-                  if token not in verify_content:
-                      print("ERROR: Verification failed - token not in file!")
-                      sys.exit(1)
-                  print("Final verification passed - file is ready for deployment")
-          except Exception as e:
-              print(f"ERROR: {e}")
-              sys.exit(1)
-          PYTHON_SCRIPT
-        env:
-          MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          echo "Secret is set, replacing placeholder in index.html..."
+          # Simple sed replacement - escape special characters in token
+          TOKEN="${{ secrets.MY_GITHUB_TOKEN }}"
+          # Use Python for reliable replacement (handles special chars)
+          python3 << EOF
+          token = """${{ secrets.MY_GITHUB_TOKEN }}"""
+          with open('index.html', 'r', encoding='utf-8') as f:
+              content = f.read()
+          content = content.replace("'GITHUB_TOKEN_PLACEHOLDER'", f"'{token}'")
+          with open('index.html', 'w', encoding='utf-8') as f:
+              f.write(content)
+          print("✓ Token replaced successfully")
+          EOF
         shell: bash
       
       - name: Verify file before deployment
