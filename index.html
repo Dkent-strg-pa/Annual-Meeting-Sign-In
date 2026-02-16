@@ -441,16 +441,31 @@
 
                 if (getResponse.ok) {
                     const fileData = await getResponse.json();
+                    
+                    if (!fileData || !fileData.sha) {
+                        throw new Error('Invalid response from GitHub API');
+                    }
+                    
                     sha = fileData.sha; // Need SHA to update existing file
+                    
                     // Decode base64 content
-                    const fileContent = atob(fileData.content.replace(/\s/g, ''));
-                    const data = JSON.parse(fileContent);
-                    submissions = data.submissions || [];
+                    if (!fileData.content) {
+                        // File exists but is empty, start fresh
+                        submissions = [];
+                    } else {
+                        // Decode base64 content (remove whitespace first)
+                        const base64Content = fileData.content.replace(/\s/g, '');
+                        const fileContent = atob(base64Content);
+                        const data = JSON.parse(fileContent);
+                        submissions = data.submissions || [];
+                    }
                 } else if (getResponse.status === 404) {
                     // File doesn't exist yet, we'll create it
                     sha = null;
+                    submissions = [];
                 } else {
-                    throw new Error(`Failed to fetch file: ${getResponse.status}`);
+                    const errorData = await getResponse.json().catch(() => ({}));
+                    throw new Error(`Failed to fetch file: ${getResponse.status} - ${errorData.message || 'Unknown error'}`);
                 }
 
                 // Add new submission
