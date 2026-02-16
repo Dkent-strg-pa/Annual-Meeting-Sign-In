@@ -67,12 +67,35 @@ jobs:
                       sys.exit(1)
                   
                   print("Token successfully injected and verified")
+                  
+                  # Double-check by reading the file back
+                  with open('index.html', 'r', encoding='utf-8') as f:
+                      verify_content = f.read()
+                  if 'GITHUB_TOKEN_PLACEHOLDER' in verify_content:
+                      print("ERROR: Verification failed - placeholder still in file!")
+                      sys.exit(1)
+                  if token not in verify_content:
+                      print("ERROR: Verification failed - token not in file!")
+                      sys.exit(1)
+                  print("Final verification passed - file is ready for deployment")
           except Exception as e:
               print(f"ERROR: {e}")
               sys.exit(1)
           PYTHON_SCRIPT
         env:
           MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+        shell: bash
+      
+      - name: Verify file before deployment
+        run: |
+          if grep -q "GITHUB_TOKEN_PLACEHOLDER" index.html; then
+            echo "ERROR: Placeholder still found in index.html!"
+            exit 1
+          fi
+          echo "✓ Verified: Placeholder has been replaced"
+          # Show first 50 chars of the token line to verify
+          grep "const GITHUB_TOKEN" index.html | head -c 80
+          echo ""
         shell: bash
       
       - name: Setup Pages
