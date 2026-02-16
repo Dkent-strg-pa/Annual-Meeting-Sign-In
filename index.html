@@ -341,8 +341,9 @@
             errorMessage.style.display = 'none'; // Hide any previous errors
 
             // Check if GitHub is configured
-            if (GITHUB_USERNAME === 'YOUR_USERNAME_HERE' || GITHUB_REPO === 'YOUR_REPO_NAME_HERE' || 
-                GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE' || GITHUB_TOKEN === '') {
+            if (!GITHUB_USERNAME || GITHUB_USERNAME === 'YOUR_USERNAME_HERE' || 
+                !GITHUB_REPO || GITHUB_REPO === 'YOUR_REPO_NAME_HERE' || 
+                !GITHUB_TOKEN || GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE') {
                 errorMessage.textContent = 'GitHub not configured. Please set GITHUB_USERNAME, GITHUB_REPO, and GITHUB_TOKEN in the code.';
                 errorMessage.style.display = 'block';
                 // Show empty list instead of localStorage when not configured
@@ -417,8 +418,9 @@
 
         async function saveSubmission(submission) {
             // Check if GitHub is configured
-            if (GITHUB_USERNAME === 'YOUR_USERNAME_HERE' || GITHUB_REPO === 'YOUR_REPO_NAME_HERE' || 
-                GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE' || GITHUB_TOKEN === '') {
+            if (!GITHUB_USERNAME || GITHUB_USERNAME === 'YOUR_USERNAME_HERE' || 
+                !GITHUB_REPO || GITHUB_REPO === 'YOUR_REPO_NAME_HERE' || 
+                !GITHUB_TOKEN || GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE') {
                 throw new Error('GitHub not configured. Please set GITHUB_USERNAME, GITHUB_REPO, and GITHUB_TOKEN in the code.');
             }
 
