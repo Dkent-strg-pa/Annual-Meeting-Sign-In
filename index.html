@@ -347,12 +347,19 @@
             console.log('GITHUB_TOKEN length:', GITHUB_TOKEN ? GITHUB_TOKEN.length : 'undefined');
             console.log('GITHUB_TOKEN starts with:', GITHUB_TOKEN ? GITHUB_TOKEN.substring(0, 15) : 'undefined');
             
-            // Check each condition separately
-            const usernameValid = GITHUB_USERNAME && GITHUB_USERNAME !== 'YOUR_USERNAME_HERE';
-            const repoValid = GITHUB_REPO && GITHUB_REPO !== 'YOUR_REPO_NAME_HERE';
+            // Check each condition separately (trim whitespace)
+            const usernameValid = GITHUB_USERNAME && 
+                                  GITHUB_USERNAME.trim() !== '' && 
+                                  GITHUB_USERNAME.trim() !== 'YOUR_USERNAME_HERE';
+            const repoValid = GITHUB_REPO && 
+                              GITHUB_REPO.trim() !== '' && 
+                              GITHUB_REPO.trim() !== 'YOUR_REPO_NAME_HERE';
             const tokenValid = GITHUB_TOKEN && 
-                              GITHUB_TOKEN !== 'YOUR_GITHUB_TOKEN_HERE' && 
-                              GITHUB_TOKEN !== 'GITHUB_TOKEN_PLACEHOLDER';
+                              typeof GITHUB_TOKEN === 'string' &&
+                              GITHUB_TOKEN.trim() !== '' &&
+                              GITHUB_TOKEN.trim() !== 'YOUR_GITHUB_TOKEN_HERE' && 
+                              GITHUB_TOKEN.trim() !== 'GITHUB_TOKEN_PLACEHOLDER' &&
+                              GITHUB_TOKEN.trim().startsWith('github_pat_');
             
             console.log('Validation results:', {
                 usernameValid,

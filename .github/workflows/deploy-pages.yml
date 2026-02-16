@@ -27,18 +27,48 @@ jobs:
             exit 1
           fi
           echo "Secret is set, replacing placeholder in index.html..."
-          # Simple sed replacement - escape special characters in token
-          TOKEN="${{ secrets.MY_GITHUB_TOKEN }}"
-          # Use Python for reliable replacement (handles special chars)
-          python3 << EOF
-          token = """${{ secrets.MY_GITHUB_TOKEN }}"""
+          # Use Python for reliable replacement (handles special chars and quotes)
+          python3 << 'PYTHON_SCRIPT'
+          import os
+          import re
+          
+          token = os.environ.get('MY_GITHUB_TOKEN', '')
+          if not token:
+              print("ERROR: MY_GITHUB_TOKEN not found in environment!")
+              exit(1)
+          
+          print(f"Token length: {len(token)}")
+          print(f"Token starts with: {token[:15]}...")
+          
           with open('index.html', 'r', encoding='utf-8') as f:
               content = f.read()
-          content = content.replace("'GITHUB_TOKEN_PLACEHOLDER'", f"'{token}'")
+          
+          # Replace the placeholder (with quotes) with the actual token (with quotes)
+          # Match: 'GITHUB_TOKEN_PLACEHOLDER' or "GITHUB_TOKEN_PLACEHOLDER"
+          old_pattern = r"['\"]GITHUB_TOKEN_PLACEHOLDER['\"]"
+          new_value = f"'{token}'"
+          
+          if not re.search(old_pattern, content):
+              print("WARNING: GITHUB_TOKEN_PLACEHOLDER pattern not found!")
+          else:
+              content = re.sub(old_pattern, new_value, content)
+              print("✓ Pattern found and replaced")
+          
           with open('index.html', 'w', encoding='utf-8') as f:
               f.write(content)
-          print("✓ Token replaced successfully")
-          EOF
+          
+          # Verify replacement
+          if 'GITHUB_TOKEN_PLACEHOLDER' in content:
+              print("ERROR: Placeholder still found after replacement!")
+              exit(1)
+          if token not in content:
+              print("ERROR: Token not found in file after replacement!")
+              exit(1)
+          
+          print("✓ Token replaced and verified successfully")
+          PYTHON_SCRIPT
+        env:
+          MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         shell: bash
       
       - name: Verify file before deployment
