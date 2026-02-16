@@ -345,7 +345,8 @@
                 GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE' || GITHUB_TOKEN === '') {
                 errorMessage.textContent = 'GitHub not configured. Please set GITHUB_USERNAME, GITHUB_REPO, and GITHUB_TOKEN in the code.';
                 errorMessage.style.display = 'block';
-                loadFromLocalStorage();
+                // Show empty list instead of localStorage when not configured
+                displayAttendance([]);
                 return;
             }
 
@@ -376,9 +377,10 @@
                 }
             } catch (error) {
                 console.error('Error loading attendance from GitHub:', error);
-                errorMessage.textContent = 'Error loading attendance from server. Showing local data only.';
+                errorMessage.textContent = `Error loading attendance: ${error.message}. Please check your GitHub configuration.`;
                 errorMessage.style.display = 'block';
-                loadFromLocalStorage();
+                // Show empty list on error instead of localStorage
+                displayAttendance([]);
             }
         }
 
@@ -483,14 +485,18 @@
                 return;
             } catch (error) {
                 console.error('Error saving to GitHub repo:', error);
-                // Fallback to localStorage as backup
-                const stored = localStorage.getItem('eventAttendance');
-                const submissions = stored ? JSON.parse(stored) : [];
-                submissions.push(submission);
-                localStorage.setItem('eventAttendance', JSON.stringify(submissions));
-                
-                // Re-throw the error so the UI can show it
+                // Don't use localStorage fallback - require GitHub to be configured
                 throw error;
+            }
+        }
+
+        // Helper function to clear old localStorage data
+        // You can call this from browser console: clearOldData()
+        function clearOldData() {
+            localStorage.removeItem('eventAttendance');
+            console.log('Old localStorage data cleared!');
+            if (document.getElementById('attendanceView').classList.contains('active')) {
+                loadAttendance();
             }
         }
 
