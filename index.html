@@ -361,8 +361,22 @@
             const tokenTrimmed = tokenIsString ? GITHUB_TOKEN.trim() : '';
             const tokenNotEmpty = tokenTrimmed !== '';
             const tokenNotDefault = tokenTrimmed !== 'YOUR_GITHUB_TOKEN_HERE';
-            const tokenNotPlaceholder = tokenTrimmed !== 'GITHUB_TOKEN_PLACEHOLDER';
+            
+            // Direct comparison check
+            const isPlaceholder = tokenTrimmed === 'GITHUB_TOKEN_PLACEHOLDER';
+            const tokenNotPlaceholder = !isPlaceholder;
             const tokenStartsWithPat = tokenTrimmed.startsWith('github_pat_');
+            
+            // Debug: Show exact comparison
+            console.log('Placeholder check:', {
+                tokenTrimmed: tokenTrimmed,
+                placeholder: 'GITHUB_TOKEN_PLACEHOLDER',
+                areEqual: tokenTrimmed === 'GITHUB_TOKEN_PLACEHOLDER',
+                tokenLength: tokenTrimmed.length,
+                placeholderLength: 'GITHUB_TOKEN_PLACEHOLDER'.length,
+                firstChars: tokenTrimmed.substring(0, 30),
+                placeholderFirstChars: 'GITHUB_TOKEN_PLACEHOLDER'.substring(0, 30)
+            });
             
             const tokenValid = tokenExists && 
                               tokenIsString &&
