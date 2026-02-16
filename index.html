@@ -343,9 +343,11 @@
             // Check if GitHub is configured
             if (!GITHUB_USERNAME || GITHUB_USERNAME === 'YOUR_USERNAME_HERE' || 
                 !GITHUB_REPO || GITHUB_REPO === 'YOUR_REPO_NAME_HERE' || 
-                !GITHUB_TOKEN || GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE') {
-                errorMessage.textContent = 'GitHub not configured. Please set GITHUB_USERNAME, GITHUB_REPO, and GITHUB_TOKEN in the code.';
+                !GITHUB_TOKEN || GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE' || 
+                GITHUB_TOKEN === 'GITHUB_TOKEN_PLACEHOLDER') {
+                errorMessage.textContent = 'GitHub not configured. The token placeholder was not replaced. Make sure the GitHub Actions workflow ran successfully and deployed to GitHub Pages.';
                 errorMessage.style.display = 'block';
+                console.error('GitHub token not configured. Current value:', GITHUB_TOKEN);
                 // Show empty list instead of localStorage when not configured
                 displayAttendance([]);
                 return;
@@ -425,8 +427,9 @@
             // Check if GitHub is configured
             if (!GITHUB_USERNAME || GITHUB_USERNAME === 'YOUR_USERNAME_HERE' || 
                 !GITHUB_REPO || GITHUB_REPO === 'YOUR_REPO_NAME_HERE' || 
-                !GITHUB_TOKEN || GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE') {
-                throw new Error('GitHub not configured. Please set GITHUB_USERNAME, GITHUB_REPO, and GITHUB_TOKEN in the code.');
+                !GITHUB_TOKEN || GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE' ||
+                GITHUB_TOKEN === 'GITHUB_TOKEN_PLACEHOLDER') {
+                throw new Error('GitHub not configured. The token placeholder was not replaced. Make sure the GitHub Actions workflow ran successfully and deployed to GitHub Pages.');
             }
 
             try {

@@ -19,7 +19,27 @@ jobs:
       
       - name: Inject GitHub Token
         run: |
-          sed -i "s/GITHUB_TOKEN_PLACEHOLDER/${{ secrets.MY_GITHUB_TOKEN }}/g" index.html
+          if [ -z "${{ secrets.MY_GITHUB_TOKEN }}" ]; then
+            echo "ERROR: MY_GITHUB_TOKEN secret is not set!"
+            exit 1
+          fi
+          # Use Python for more reliable string replacement
+          python3 << EOF
+          with open('index.html', 'r', encoding='utf-8') as f:
+              content = f.read()
+          token = "${{ secrets.MY_GITHUB_TOKEN }}"
+          if 'GITHUB_TOKEN_PLACEHOLDER' not in content:
+              print("WARNING: GITHUB_TOKEN_PLACEHOLDER not found in index.html")
+          else:
+              content = content.replace('GITHUB_TOKEN_PLACEHOLDER', token)
+              with open('index.html', 'w', encoding='utf-8') as f:
+                  f.write(content)
+              # Verify replacement worked
+              if 'GITHUB_TOKEN_PLACEHOLDER' in content:
+                  print("ERROR: Token replacement failed!")
+                  exit(1)
+              print("Token successfully injected")
+          EOF
         shell: bash
       
       - name: Setup Pages
