@@ -354,12 +354,35 @@
             const repoValid = GITHUB_REPO && 
                               GITHUB_REPO.trim() !== '' && 
                               GITHUB_REPO.trim() !== 'YOUR_REPO_NAME_HERE';
-            const tokenValid = GITHUB_TOKEN && 
-                              typeof GITHUB_TOKEN === 'string' &&
-                              GITHUB_TOKEN.trim() !== '' &&
-                              GITHUB_TOKEN.trim() !== 'YOUR_GITHUB_TOKEN_HERE' && 
-                              GITHUB_TOKEN.trim() !== 'GITHUB_TOKEN_PLACEHOLDER' &&
-                              GITHUB_TOKEN.trim().startsWith('github_pat_');
+            
+            // Detailed token validation with logging
+            const tokenExists = !!GITHUB_TOKEN;
+            const tokenIsString = typeof GITHUB_TOKEN === 'string';
+            const tokenTrimmed = tokenIsString ? GITHUB_TOKEN.trim() : '';
+            const tokenNotEmpty = tokenTrimmed !== '';
+            const tokenNotDefault = tokenTrimmed !== 'YOUR_GITHUB_TOKEN_HERE';
+            const tokenNotPlaceholder = tokenTrimmed !== 'GITHUB_TOKEN_PLACEHOLDER';
+            const tokenStartsWithPat = tokenTrimmed.startsWith('github_pat_');
+            
+            const tokenValid = tokenExists && 
+                              tokenIsString &&
+                              tokenNotEmpty &&
+                              tokenNotDefault && 
+                              tokenNotPlaceholder &&
+                              tokenStartsWithPat;
+            
+            console.log('Token validation details:', {
+                tokenExists,
+                tokenIsString,
+                tokenNotEmpty,
+                tokenNotDefault,
+                tokenNotPlaceholder,
+                tokenStartsWithPat,
+                tokenLength: GITHUB_TOKEN ? GITHUB_TOKEN.length : 0,
+                tokenType: typeof GITHUB_TOKEN,
+                tokenFirst20: GITHUB_TOKEN ? GITHUB_TOKEN.substring(0, 20) : 'undefined',
+                tokenTrimmedFirst20: tokenTrimmed ? tokenTrimmed.substring(0, 20) : 'undefined'
+            });
             
             console.log('Validation results:', {
                 usernameValid,
