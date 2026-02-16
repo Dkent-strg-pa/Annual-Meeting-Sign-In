@@ -352,13 +352,18 @@
             }
 
             try {
+                // Determine authorization header format based on token type
+                const authHeader = GITHUB_TOKEN.startsWith('github_pat_') 
+                    ? `Bearer ${GITHUB_TOKEN}` 
+                    : `token ${GITHUB_TOKEN}`;
+
                 // Load from GitHub repo JSON file
                 const response = await fetch(
                     `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${JSON_FILE_PATH}`,
                     {
                         headers: {
                             'Accept': 'application/vnd.github.v3.raw',
-                            'Authorization': `token ${GITHUB_TOKEN}`
+                            'Authorization': authHeader
                         }
                     }
                 );
@@ -425,13 +430,19 @@
             }
 
             try {
+                // Determine authorization header format based on token type
+                // Fine-grained tokens (github_pat_...) use Bearer, classic tokens (ghp_...) use token
+                const authHeader = GITHUB_TOKEN.startsWith('github_pat_') 
+                    ? `Bearer ${GITHUB_TOKEN}` 
+                    : `token ${GITHUB_TOKEN}`;
+
                 // First, get the current file to get its SHA (required for updating)
                 const getResponse = await fetch(
                     `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${JSON_FILE_PATH}`,
                     {
                         headers: {
                             'Accept': 'application/vnd.github.v3+json',
-                            'Authorization': `token ${GITHUB_TOKEN}`
+                            'Authorization': authHeader
                         }
                     }
                 );
@@ -442,8 +453,15 @@
                 if (getResponse.ok) {
                     const fileData = await getResponse.json();
                     
-                    if (!fileData || !fileData.sha) {
-                        throw new Error('Invalid response from GitHub API');
+                    // Debug: log the response to see what we're getting
+                    console.log('GitHub API response:', fileData);
+                    
+                    if (!fileData) {
+                        throw new Error('Invalid response from GitHub API: empty response');
+                    }
+                    
+                    if (!fileData.sha) {
+                        throw new Error('Invalid response from GitHub API: missing SHA. Response: ' + JSON.stringify(fileData));
                     }
                     
                     sha = fileData.sha; // Need SHA to update existing file
@@ -454,10 +472,19 @@
                         submissions = [];
                     } else {
                         // Decode base64 content (remove whitespace first)
-                        const base64Content = fileData.content.replace(/\s/g, '');
-                        const fileContent = atob(base64Content);
-                        const data = JSON.parse(fileContent);
-                        submissions = data.submissions || [];
+                        const base64Content = String(fileData.content || '').replace(/\s/g, '');
+                        if (!base64Content) {
+                            submissions = [];
+                        } else {
+                            try {
+                                const fileContent = atob(base64Content);
+                                const data = JSON.parse(fileContent);
+                                submissions = data.submissions || [];
+                            } catch (parseError) {
+                                console.error('Error parsing file content:', parseError);
+                                throw new Error('Failed to parse file content: ' + parseError.message);
+                            }
+                        }
                     }
                 } else if (getResponse.status === 404) {
                     // File doesn't exist yet, we'll create it
@@ -482,7 +509,7 @@
                         method: 'PUT',
                         headers: {
                             'Accept': 'application/vnd.github.v3+json',
-                            'Authorization': `token ${GITHUB_TOKEN}`,
+                            'Authorization': authHeader,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
