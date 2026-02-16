@@ -479,11 +479,15 @@
                         // Content already loaded from raw URL above, so we're good
                     } else if (fileData.submissions) {
                         // We got raw JSON content - API returned file content directly
-                        submissions = fileData.submissions || [];
+                        // Use the submissions we already loaded from raw URL (don't overwrite)
+                        // submissions already set from raw URL above
+                        
+                        console.log('Got raw content, attempting to retrieve SHA via Git Data API...');
                         
                         // Need to get SHA using Git Data API or by checking the commit
                         // Try getting the latest commit that modified this file
-                        const commitsResponse = await fetch(
+                        try {
+                            const commitsResponse = await fetch(
                             `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/commits?path=${JSON_FILE_PATH}&per_page=1`,
                             {
                                 headers: {
@@ -528,9 +532,9 @@
                                         const fileEntry = treeData.tree.find(entry => entry.path === JSON_FILE_PATH);
                                         
                                         if (fileEntry) {
-                                            // Try to get SHA from contents API with ref parameter
+                                            // Try to get SHA from contents API using the commit SHA as ref
                                             const contentsResponse = await fetch(
-                                                `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${JSON_FILE_PATH}?ref=main`,
+                                                `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${JSON_FILE_PATH}?ref=${commitSha}`,
                                                 {
                                                     headers: {
                                                         'Accept': 'application/vnd.github.v3+json',
@@ -547,17 +551,33 @@
                                                 } else if (contentsData.sha) {
                                                     sha = contentsData.sha;
                                                 } else if (contentsData.submissions) {
-                                                    // Still getting raw content - use blob SHA as fallback
-                                                    // This won't work for updates, so we need to handle this differently
-                                                    sha = fileEntry.sha;
+                                                    // Still getting raw content - try one more time with main branch
+                                                    const mainResponse = await fetch(
+                                                        `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${JSON_FILE_PATH}?ref=main`,
+                                                        {
+                                                            headers: {
+                                                                'Accept': 'application/vnd.github.v3+json',
+                                                                'Authorization': authHeader
+                                                            }
+                                                        }
+                                                    );
+                                                    
+                                                    if (mainResponse.ok) {
+                                                        const mainData = await mainResponse.json();
+                                                        sha = mainData.sha || (Array.isArray(mainData) ? mainData.find(f => f.path === JSON_FILE_PATH)?.sha : null);
+                                                    }
+                                                    
+                                                    // If still no SHA, we can't proceed
+                                                    if (!sha) {
+                                                        throw new Error('Could not retrieve file SHA - API returned raw content instead of metadata');
+                                                    }
                                                 }
                                                 
                                                 if (!sha) {
                                                     throw new Error('Could not retrieve file SHA');
                                                 }
                                             } else {
-                                                // Fallback to blob SHA (won't work but better than nothing)
-                                                sha = fileEntry.sha;
+                                                throw new Error(`Could not get file SHA: ${contentsResponse.status}`);
                                             }
                                         } else {
                                             throw new Error('File not found in repository tree');
@@ -574,8 +594,18 @@
                         } else {
                             throw new Error(`Could not get commits: ${commitsResponse.status}`);
                         }
+                        } catch (shaError) {
+                            console.error('Error retrieving SHA via Git Data API:', shaError);
+                            throw new Error(`Failed to get file SHA: ${shaError.message}. Please ensure your token has proper permissions.`);
+                        }
                     } else {
-                        throw new Error('Unexpected response format from GitHub API');
+                        throw new Error('Unexpected response format from GitHub API. Response: ' + JSON.stringify(fileData).substring(0, 200));
+                    }
+                    
+                    // Final check: if we still don't have SHA and file exists, we can't proceed
+                    if (!sha && getResponse.status !== 404) {
+                        console.error('Failed to get SHA. FileData:', fileData);
+                        throw new Error('Could not retrieve file SHA. The GitHub API returned raw content instead of metadata. Please try again.');
                     }
                 } else if (getResponse.status === 404) {
                     // File doesn't exist yet, we'll create it
