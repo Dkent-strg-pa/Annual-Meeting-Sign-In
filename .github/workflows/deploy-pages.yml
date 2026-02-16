@@ -122,6 +122,33 @@ jobs:
           fi
         shell: bash
       
+      - name: Verify artifact contents
+        run: |
+          echo "=== Files that will be deployed ==="
+          ls -la
+          echo ""
+          echo "=== Contents of index.html (first 50 lines) ==="
+          head -50 index.html | grep -A 5 -B 5 "GITHUB_TOKEN\|JSONBIN" || echo "No matches in first 50 lines"
+          echo ""
+          echo "=== Checking for JSONBin references ==="
+          if grep -q "JSONBIN" index.html; then
+            echo "❌ ERROR: JSONBin found in file!"
+            exit 1
+          fi
+          echo "✓ No JSONBin references found"
+          echo ""
+          echo "=== Checking for GitHub token ==="
+          if grep -q "GITHUB_TOKEN_PLACEHOLDER" index.html; then
+            echo "❌ ERROR: Placeholder still found!"
+            exit 1
+          fi
+          if grep -q "github_pat" index.html; then
+            echo "✓ GitHub token found in file"
+          else
+            echo "⚠ WARNING: GitHub token pattern not found"
+          fi
+        shell: bash
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
