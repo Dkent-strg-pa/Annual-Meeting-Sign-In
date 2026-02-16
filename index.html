@@ -341,6 +341,12 @@
             errorMessage.style.display = 'none'; // Hide any previous errors
 
             // Check if GitHub is configured
+            console.log('Checking GitHub configuration...');
+            console.log('GITHUB_USERNAME:', GITHUB_USERNAME);
+            console.log('GITHUB_REPO:', GITHUB_REPO);
+            console.log('GITHUB_TOKEN length:', GITHUB_TOKEN ? GITHUB_TOKEN.length : 'undefined');
+            console.log('GITHUB_TOKEN starts with:', GITHUB_TOKEN ? GITHUB_TOKEN.substring(0, 15) : 'undefined');
+            
             if (!GITHUB_USERNAME || GITHUB_USERNAME === 'YOUR_USERNAME_HERE' || 
                 !GITHUB_REPO || GITHUB_REPO === 'YOUR_REPO_NAME_HERE' || 
                 !GITHUB_TOKEN || GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE' || 
@@ -348,10 +354,18 @@
                 errorMessage.textContent = 'GitHub not configured. The token placeholder was not replaced. Make sure the GitHub Actions workflow ran successfully and deployed to GitHub Pages.';
                 errorMessage.style.display = 'block';
                 console.error('GitHub token not configured. Current value:', GITHUB_TOKEN);
+                console.error('Token check details:', {
+                    isEmpty: !GITHUB_TOKEN,
+                    isPlaceholder: GITHUB_TOKEN === 'GITHUB_TOKEN_PLACEHOLDER',
+                    isDefault: GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE',
+                    actualValue: GITHUB_TOKEN ? GITHUB_TOKEN.substring(0, 20) + '...' : 'undefined'
+                });
                 // Show empty list instead of localStorage when not configured
                 displayAttendance([]);
                 return;
             }
+            
+            console.log('✓ GitHub configuration is valid');
 
             try {
                 // Determine authorization header format based on token type
