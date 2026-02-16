@@ -101,13 +101,25 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
       
-      - name: List files before upload
+      - name: Verify token replacement before upload
         run: |
-          echo "Files in current directory:"
-          ls -la
+          echo "=== Verifying index.html before upload ==="
+          if grep -q "GITHUB_TOKEN_PLACEHOLDER" index.html; then
+            echo "❌ ERROR: Placeholder still found!"
+            exit 1
+          fi
+          echo "✓ Placeholder has been replaced"
           echo ""
-          echo "Checking index.html:"
-          head -20 index.html | grep -E "GITHUB_TOKEN|JSONBIN" || echo "No matches found"
+          echo "Token line in file:"
+          grep "const GITHUB_TOKEN" index.html | head -c 100
+          echo ""
+          echo ""
+          echo "Checking token starts with 'github_pat':"
+          if grep -q "const GITHUB_TOKEN = 'github_pat" index.html; then
+            echo "✓ Token format is correct"
+          else
+            echo "⚠ WARNING: Token doesn't start with 'github_pat'"
+          fi
         shell: bash
       
       - name: Upload artifact
