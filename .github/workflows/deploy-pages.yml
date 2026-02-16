@@ -43,16 +43,34 @@ jobs:
           with open('index.html', 'r', encoding='utf-8') as f:
               content = f.read()
           
-          # Replace the placeholder (with quotes) with the actual token (with quotes)
-          # Match: 'GITHUB_TOKEN_PLACEHOLDER' or "GITHUB_TOKEN_PLACEHOLDER"
-          old_pattern = r"['\"]GITHUB_TOKEN_PLACEHOLDER['\"]"
-          new_value = f"'{token}'"
+          # Replace the placeholder - try multiple patterns
+          original_content = content
           
-          if not re.search(old_pattern, content):
-              print("WARNING: GITHUB_TOKEN_PLACEHOLDER pattern not found!")
-          else:
-              content = re.sub(old_pattern, new_value, content)
-              print("✓ Pattern found and replaced")
+          # Pattern 1: 'GITHUB_TOKEN_PLACEHOLDER'
+          if "'GITHUB_TOKEN_PLACEHOLDER'" in content:
+              content = content.replace("'GITHUB_TOKEN_PLACEHOLDER'", f"'{token}'")
+              print("✓ Replaced 'GITHUB_TOKEN_PLACEHOLDER'")
+          
+          # Pattern 2: "GITHUB_TOKEN_PLACEHOLDER"
+          if '"GITHUB_TOKEN_PLACEHOLDER"' in content:
+              content = content.replace('"GITHUB_TOKEN_PLACEHOLDER"', f"'{token}'")
+              print("✓ Replaced \"GITHUB_TOKEN_PLACEHOLDER\"")
+          
+          # Pattern 3: Just the word (no quotes)
+          if 'GITHUB_TOKEN_PLACEHOLDER' in content and content == original_content:
+              # Last resort - replace without quotes
+              content = content.replace('GITHUB_TOKEN_PLACEHOLDER', token)
+              print("✓ Replaced GITHUB_TOKEN_PLACEHOLDER (no quotes)")
+          
+          if content == original_content:
+              print("ERROR: No replacement was made!")
+              print("Searching for token references in file...")
+              if 'GITHUB_TOKEN' in content:
+                  # Show context around GITHUB_TOKEN
+                  idx = content.find('GITHUB_TOKEN')
+                  print(f"Found GITHUB_TOKEN at position {idx}")
+                  print(f"Context: {content[max(0, idx-50):idx+100]}")
+              exit(1)
           
           with open('index.html', 'w', encoding='utf-8') as f:
               f.write(content)
@@ -64,6 +82,11 @@ jobs:
           if token not in content:
               print("ERROR: Token not found in file after replacement!")
               exit(1)
+          
+          # Show proof of replacement
+          token_line = [line for line in content.split('\n') if 'GITHUB_TOKEN' in line and 'const' in line]
+          if token_line:
+              print(f"✓ Token line: {token_line[0][:80]}...")
           
           print("✓ Token replaced and verified successfully")
           PYTHON_SCRIPT
