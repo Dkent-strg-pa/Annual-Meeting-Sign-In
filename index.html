@@ -462,10 +462,14 @@
                         const fileContent = await contentResponse.text();
                         const data = JSON.parse(fileContent);
                         submissions = data.submissions || [];
+                        console.log(`Loaded ${submissions.length} submissions from raw URL`);
                     } catch (e) {
                         // File might be empty or invalid
+                        console.error('Error parsing content from raw URL:', e);
                         submissions = [];
                     }
+                } else {
+                    console.log('Raw URL returned status:', contentResponse.status);
                 }
 
                 // Get SHA from Contents API
@@ -473,14 +477,28 @@
                     const fileData = await getResponse.json();
                     
                     // Check if we got metadata (has sha) or raw content (has submissions)
-                    if (fileData.sha) {
-                        // We got file metadata - use the SHA
+                    if (fileData.sha && fileData.content) {
+                        // We got file metadata with base64 content - parse it
                         sha = fileData.sha;
-                        // Content already loaded from raw URL above, so we're good
+                        try {
+                            const base64Content = String(fileData.content).replace(/\s/g, '');
+                            const fileContent = atob(base64Content);
+                            const data = JSON.parse(fileContent);
+                            submissions = data.submissions || [];
+                            console.log(`Loaded ${submissions.length} submissions from API metadata`);
+                        } catch (parseError) {
+                            console.error('Error parsing metadata content, using raw URL data:', parseError);
+                            // Fall back to raw URL data we loaded earlier
+                        }
+                    } else if (fileData.sha) {
+                        // We got file metadata but no content - use raw URL data
+                        sha = fileData.sha;
+                        console.log(`Using ${submissions.length} submissions from raw URL (metadata had no content)`);
                     } else if (fileData.submissions) {
                         // We got raw JSON content - API returned file content directly
-                        // Use the submissions we already loaded from raw URL (don't overwrite)
-                        // submissions already set from raw URL above
+                        // Use the API response data (it's more reliable than raw URL which might be cached)
+                        submissions = fileData.submissions || [];
+                        console.log(`Got ${submissions.length} submissions from API raw content`);
                         
                         console.log('Got raw content, attempting to retrieve SHA via Git Data API...');
                         
@@ -617,10 +635,13 @@
                 }
 
                 // Add new submission
+                console.log(`Current submissions count before adding: ${submissions.length}`);
                 submissions.push(submission);
+                console.log(`Submissions count after adding: ${submissions.length}`);
 
                 // Prepare the new file content
                 const newContent = JSON.stringify({ submissions: submissions }, null, 2);
+                console.log(`Saving ${submissions.length} submissions to GitHub`);
                 const encodedContent = btoa(unescape(encodeURIComponent(newContent)));
 
                 // Update or create the file
