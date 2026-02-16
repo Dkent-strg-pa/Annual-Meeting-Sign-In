@@ -101,6 +101,15 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
       
+      - name: List files before upload
+        run: |
+          echo "Files in current directory:"
+          ls -la
+          echo ""
+          echo "Checking index.html:"
+          head -20 index.html | grep -E "GITHUB_TOKEN|JSONBIN" || echo "No matches found"
+        shell: bash
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
