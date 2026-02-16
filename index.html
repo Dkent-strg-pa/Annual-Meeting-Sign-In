@@ -304,7 +304,7 @@
         
         const GITHUB_USERNAME = 'Dkent-strg-pa'; // Your GitHub username
         const GITHUB_REPO = 'Annual-Meeting-Sign-In'; // Your repository name (e.g., "my-signin-app")
-        const GITHUB_TOKEN = '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'; // Your GitHub Personal Access Token
+        const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Your GitHub Personal Access Token
         const JSON_FILE_PATH = 'attendance.json'; // Path to JSON file in your repo
         
         const form = document.getElementById('signInForm');
